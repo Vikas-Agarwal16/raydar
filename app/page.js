@@ -1,16 +1,29 @@
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
+import StatsStrip from "@/components/StatsStrip";
+import WhyRaydar from "@/components/WhyRaydar";
+import HowItWorks from "@/components/HowItWorks";
+import Sectors from "@/components/Sectors";
+import FAQ from "@/components/FAQ";
+import FinalCTA from "@/components/FinalCTA";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
     <main>
       <Navbar />
-      {/* hero section goes here next */}
+      <Hero />
+      <StatsStrip />
+      <WhyRaydar />
+      <HowItWorks />
+      <Sectors />
+      <FAQ />
+      <FinalCTA />
+      <Footer />
     </main>
   );
 }
-
-
 <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
         <Image
