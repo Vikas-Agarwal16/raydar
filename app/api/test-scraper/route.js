@@ -2,7 +2,7 @@ import { updateSiteStatus } from "@/lib/updateSiteStatus";
 
 export async function GET() {
   try {
-    const result = await updateSiteStatus("nta");
+    const result = await updateSiteStatus("gate");
     return Response.json(result);
   } catch (err) {
     return Response.json(
