@@ -30,11 +30,11 @@ export default function SignInPage() {
       return;
     }
 
-    router.push("/");
+   router.push("/dashboard");
   }
 
   function handleGoogleSignIn() {
-    signIn("google", { callbackUrl: "/" });
+    signIn("google", { callbackUrl: "/dashboard" });
   }
 
   return (
