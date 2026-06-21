@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const QUESTIONS = [
-  { key: "exams", label: "Are you preparing for any entrance exams?" },
-  { key: "internships", label: "Are you looking for internships?" },
-  { key: "hackathons", label: "Are you interested in hackathons?" },
+  { key: "exams", label: "Are you preparing for any entrance exams?", icon: "📚" },
+  { key: "internships", label: "Are you looking for internships?", icon: "💼" },
+  { key: "hackathons", label: "Are you interested in hackathons?", icon: "💻" },
 ];
 
 export default function OnboardingForm() {
@@ -23,68 +23,84 @@ export default function OnboardingForm() {
     setAnswers((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-const handleSubmit = async () => {
-  setLoading(true);
-  setError("");
+  const hasSelection = Object.values(answers).some((val) => val === true);
 
-  try {
-    const res = await fetch("/api/user/onboarding", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(answers),
-    });
+  const handleSubmit = async () => {
+    if (!hasSelection) return;
 
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error || "Something went wrong");
-      return;
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/user/onboarding", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(answers),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Something went wrong");
+        return;
+      }
+
+      router.refresh();
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      router.push("/dashboard");
+    } catch (err) {
+      setError("Network error. Try again.");
+    } finally {
+      setLoading(false);
     }
-
-    // === KEY FIXES START HERE ===
-    router.refresh();                    // Refresh server data
-    await new Promise((resolve) => setTimeout(resolve, 800)); // Wait for DB + cache
-    router.push("/dashboard");
-    // === KEY FIXES END HERE ===
-
-  } catch (err) {
-    console.error(err);
-    setError("Network error. Try again.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
-    <div className="w-full max-w-md bg-[#0B0C10] border border-white/10 rounded-3xl p-8">
-      <h1 className="text-2xl font-semibold text-white mb-2">Quick setup</h1>
-      <p className="text-white/50 text-sm mb-8">
-        3 questions. We'll only track what's relevant to you.
-      </p>
+    <div className="w-full max-w-md bg-[#0B0C10] border border-white/10 rounded-3xl p-10">
+      <div className="text-center mb-10">
+        {/* Brand Consistent Icon */}
+        <div className="w-14 h-14 mx-auto mb-6 rounded-2xl bg-[#E8447A] flex items-center justify-center shadow-lg shadow-[#E8447A]/30">
+          <span className="text-3xl font-bold text-white tracking-tighter">R</span>
+        </div>
 
-      <div className="space-y-4 mb-8">
+        <h1 className="text-3xl font-semibold text-white tracking-tight">Quick Setup</h1>
+        <p className="text-white/60 mt-3 text-[15px] leading-relaxed">
+          Select the areas you want us to monitor.<br />
+          You can change this anytime later.
+        </p>
+      </div>
+
+      <div className="space-y-4 mb-10">
         {QUESTIONS.map((q) => (
           <button
             key={q.key}
             onClick={() => toggle(q.key)}
-            className={`w-full text-left px-5 py-4 rounded-xl border transition ${
+            className={`w-full flex items-center gap-4 text-left px-6 py-5 rounded-2xl border transition-all duration-200 group ${
               answers[q.key]
-                ? "border-[#5B7FFF] bg-[#5B7FFF]/10 text-white"
-                : "border-white/10 text-white/70"
+                ? "border-[#E8447A] bg-[#E8447A]/10 text-white"
+                : "border-white/10 hover:border-white/30 text-white/70 hover:text-white"
             }`}
           >
-            {q.label}
+            <span className="text-3xl transition-transform group-hover:scale-110">{q.icon}</span>
+            <span className="font-medium text-[15px]">{q.label}</span>
           </button>
         ))}
       </div>
 
-      {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
+      {error && (
+        <p className="text-red-400 text-sm mb-6 text-center">{error}</p>
+      )}
 
       <button
         onClick={handleSubmit}
-        disabled={loading}
-        className="w-full bg-[#5B7FFF] text-white rounded-xl py-3 font-medium disabled:opacity-50"
+        disabled={loading || !hasSelection}
+        className="w-full bg-[#E8447A] hover:bg-[#D63A6C] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-2xl py-4 transition-all active:scale-[0.985]"
       >
-        {loading ? "Saving..." : "Continue"}
+        {loading 
+          ? "Saving Preferences..." 
+          : !hasSelection 
+            ? "Select at least one option to continue" 
+            : "Continue to Dashboard"
+        }
       </button>
     </div>
   );
