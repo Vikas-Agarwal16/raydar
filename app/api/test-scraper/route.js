@@ -1,3 +1,5 @@
+import { scrapeBySlug } from "@/lib/scraper";
+
 export async function GET(request) {
   if (process.env.NODE_ENV === "production") {
     return new Response("Not found", { status: 404 });
