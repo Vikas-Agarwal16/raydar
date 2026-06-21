@@ -12,30 +12,33 @@ export default function SignInPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleCredentialsSignIn(e) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+// Replace the handleCredentialsSignIn function with this:
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+async function handleCredentialsSignIn(e) {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    setLoading(false);
+  const result = await signIn("credentials", {
+    email,
+    password,
+    redirect: false,
+  });
 
-    if (result?.error) {
-      setError("Invalid email or password");
-      return;
-    }
+  setLoading(false);
 
-   router.push("/dashboard");
+  if (result?.error) {
+    setError("Invalid email or password");
+    return;
   }
 
-  function handleGoogleSignIn() {
-    signIn("google", { callbackUrl: "/dashboard" });
-  }
+  // Go to onboarding first — let the server decide
+  router.push("/onboarding");
+}
+
+ function handleGoogleSignIn() {
+  signIn("google", { callbackUrl: "/onboarding" });
+}
 
   return (
     <div className="min-h-screen bg-[#0B0C10] flex items-center justify-center px-6 py-12">

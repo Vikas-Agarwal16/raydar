@@ -23,30 +23,34 @@ export default function OnboardingForm() {
     setAnswers((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    setError("");
+ const handleSubmit = async () => {
+  setLoading(true);
+  setError("");
 
-    try {
-      const res = await fetch("/api/user/onboarding", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(answers),
-      });
+  try {
+    const res = await fetch("/api/user/onboarding", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(answers),
+    });
 
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Something went wrong");
-        setLoading(false);
-        return;
-      }
-
-      router.push("/dashboard");
-    } catch (err) {
-      setError("Network error. Try again.");
-      setLoading(false);
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error || "Something went wrong");
+      return;
     }
-  };
+
+    // ✅ Key fixes:
+    router.refresh();                    // Refresh server component data
+    await new Promise(resolve => setTimeout(resolve, 700)); // Give DB time to propagate
+    router.push("/dashboard");
+
+  } catch (err) {
+    setError("Network error. Try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="w-full max-w-md bg-[#0B0C10] border border-white/10 rounded-3xl p-8">

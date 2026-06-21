@@ -18,56 +18,60 @@ export default function SignUpPage() {
   const clearError = () => setError("");
 
   async function handleSignUp(e) {
-    e.preventDefault();
-    setError("");
+  e.preventDefault();
+  setError("");
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Something went wrong");
-        setLoading(false);
-        return;
-      }
-
-      // Auto login after signup
-      const signInResult = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (signInResult?.error) {
-        router.push("/signin");
-        return;
-      }
-
-      router.push("/");
-    } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+  if (password !== confirmPassword) {
+    setError("Passwords do not match");
+    return;
   }
+
+  if (password.length < 8) {
+    setError("Password must be at least 8 characters long");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    // 1. Create account
+    const res = await fetch("/api/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || "Something went wrong");
+      setLoading(false);
+      return;
+    }
+
+    // 2. Auto sign in after successful signup
+    const signInResult = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (signInResult?.error) {
+      setError("Account created but login failed. Please sign in manually.");
+      router.push("/signin");
+      return;
+    }
+
+    // 3. Go to onboarding (this was the main issue)
+    router.push("/onboarding");
+
+  } catch (err) {
+    console.error(err);
+    setError("Something went wrong. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+}
 
   return (
     <>
@@ -172,7 +176,7 @@ export default function SignUpPage() {
         </div>
 
         <button
-          onClick={() => signIn("google", { callbackUrl: "/" })}
+          onClick={() => signIn("google", { callbackUrl: "/onboarding" })}
           className="w-full flex items-center justify-center gap-3 border border-white/10 hover:bg-white/5 text-white rounded-2xl py-3.5 transition-all"
         >
           Continue with Google
