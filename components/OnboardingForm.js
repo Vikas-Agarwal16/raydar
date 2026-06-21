@@ -23,7 +23,7 @@ export default function OnboardingForm() {
     setAnswers((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
- const handleSubmit = async () => {
+const handleSubmit = async () => {
   setLoading(true);
   setError("");
 
@@ -40,12 +40,14 @@ export default function OnboardingForm() {
       return;
     }
 
-    // ✅ Key fixes:
-    router.refresh();                    // Refresh server component data
-    await new Promise(resolve => setTimeout(resolve, 700)); // Give DB time to propagate
+    // === KEY FIXES START HERE ===
+    router.refresh();                    // Refresh server data
+    await new Promise((resolve) => setTimeout(resolve, 800)); // Wait for DB + cache
     router.push("/dashboard");
+    // === KEY FIXES END HERE ===
 
   } catch (err) {
+    console.error(err);
     setError("Network error. Try again.");
   } finally {
     setLoading(false);

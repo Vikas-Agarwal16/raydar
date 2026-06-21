@@ -21,6 +21,14 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    enabledSites: {
+  type: [String], // array of site slugs from lib/sites.js
+  default: [],
+},
+onboardingComplete: {
+  type: Boolean,
+  default: false,
+},
   },
   { timestamps: true }
 );
