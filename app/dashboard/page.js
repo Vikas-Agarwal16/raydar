@@ -11,9 +11,8 @@ const STATUS_STYLES = {
   SOON: { label: "SOON", badge: "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30" },
   MINOR: { label: "MINOR", badge: "bg-[#5B7FFF]/15 text-[#7FA8FF] border-[#5B7FFF]/30" },
   NOISE: { label: "CLEAR", badge: "bg-white/10 text-white/50 border-white/10" },
+  WATCHING: { label: "WATCHING", badge: "bg-white/5 text-white/40 border-white/10" },
 };
-
-const WATCHING_STYLE = { label: "WATCHING", badge: "bg-white/5 text-white/40 border-white/10" };
 
 function isToday(date) {
   if (!date) return false;
@@ -115,8 +114,8 @@ export default async function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {categorySites.map((site) => {
                 const style = site.status
-                  ? STATUS_STYLES[site.status.severity] || STATUS_STYLES.NOISE
-                  : WATCHING_STYLE;
+  ? STATUS_STYLES[site.status.severity] || STATUS_STYLES.NOISE
+  : STATUS_STYLES.WATCHING;
 
                 return (
                   <div
