@@ -7,11 +7,23 @@ import { getSiteStatusMap } from "@/lib/getSiteStatuses";
 import SignOutButton from "@/components/SignOutButton";
 
 const STATUS_STYLES = {
-  CRITICAL: { label: "CRITICAL", badge: "bg-[#DC2626]/15 text-[#DC2626] border-[#DC2626]/30" },
-  SOON: { label: "SOON", badge: "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30" },
-  MINOR: { label: "MINOR", badge: "bg-[#5B7FFF]/15 text-[#7FA8FF] border-[#5B7FFF]/30" },
+  CRITICAL: {
+    label: "CRITICAL",
+    badge: "bg-[#DC2626]/15 text-[#DC2626] border-[#DC2626]/30",
+  },
+  SOON: {
+    label: "SOON",
+    badge: "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30",
+  },
+  MINOR: {
+    label: "MINOR",
+    badge: "bg-[#5B7FFF]/15 text-[#7FA8FF] border-[#5B7FFF]/30",
+  },
   NOISE: { label: "CLEAR", badge: "bg-white/10 text-white/50 border-white/10" },
-  WATCHING: { label: "WATCHING", badge: "bg-white/5 text-white/40 border-white/10" },
+  WATCHING: {
+    label: "WATCHING",
+    badge: "bg-white/5 text-white/40 border-white/10",
+  },
 };
 
 function isToday(date) {
@@ -35,7 +47,7 @@ export default async function DashboardPage() {
 
   await dbConnect();
   const user = await User.findById(session.user.id).select(
-    "enabledSites onboardingComplete name"
+    "enabledSites onboardingComplete name telegramChatId",
   );
 
   if (!user?.onboardingComplete) redirect("/onboarding");
@@ -57,8 +69,9 @@ export default async function DashboardPage() {
   const alertsToday = sitesWithStatus.filter(
     (site) =>
       site.status &&
-      (site.status.severity === "CRITICAL" || site.status.severity === "SOON") &&
-      isToday(site.status.lastChangedAt)
+      (site.status.severity === "CRITICAL" ||
+        site.status.severity === "SOON") &&
+      isToday(site.status.lastChangedAt),
   ).length;
 
   const lastScanDate = sitesWithStatus
@@ -78,14 +91,34 @@ export default async function DashboardPage() {
               Ray<span className="text-[#E8447A]">dar</span>
             </span>
           </div>
-          <SignOutButton />
+
+          <div className="flex items-center gap-4">
+            {user.telegramChatId ? (
+              <span className="px-3 py-1.5 text-xs font-mono rounded-full border border-[#5B7FFF]/30 bg-[#5B7FFF]/10 text-[#7FA8FF]">
+                Telegram Connected
+              </span>
+            ) : (
+              <a
+                href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}?start=${session.user.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-1.5 text-xs font-mono rounded-full border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors"
+              >
+                Connect Telegram
+              </a>
+            )}
+            <SignOutButton />
+          </div>
         </div>
 
         <h1 className="text-4xl font-semibold text-white tracking-tight mb-2">
           Welcome back, {user.name?.split(" ")[0]}
         </h1>
         <p className="text-white/60 text-lg">
-          Monitoring <span className="text-white font-medium">{sites.length} key sources</span>
+          Monitoring{" "}
+          <span className="text-white font-medium">
+            {sites.length} key sources
+          </span>
         </p>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10 mb-16">
@@ -95,9 +128,16 @@ export default async function DashboardPage() {
             { label: "Alerts Today", value: alertsToday },
             { label: "Last Scan", value: formatRelativeTime(lastScanDate) },
           ].map((stat, i) => (
-            <div key={i} className="bg-white/[0.03] border border-white/10 rounded-3xl p-6">
-              <p className="text-4xl font-semibold text-white mb-1">{stat.value}</p>
-              <p className="text-white/50 text-sm font-mono tracking-widest">{stat.label}</p>
+            <div
+              key={i}
+              className="bg-white/[0.03] border border-white/10 rounded-3xl p-6"
+            >
+              <p className="text-4xl font-semibold text-white mb-1">
+                {stat.value}
+              </p>
+              <p className="text-white/50 text-sm font-mono tracking-widest">
+                {stat.label}
+              </p>
             </div>
           ))}
         </div>
@@ -114,8 +154,8 @@ export default async function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {categorySites.map((site) => {
                 const style = site.status
-  ? STATUS_STYLES[site.status.severity] || STATUS_STYLES.NOISE
-  : STATUS_STYLES.WATCHING;
+                  ? STATUS_STYLES[site.status.severity] || STATUS_STYLES.NOISE
+                  : STATUS_STYLES.WATCHING;
 
                 return (
                   <div
@@ -123,14 +163,19 @@ export default async function DashboardPage() {
                     className="group bg-white/[0.02] border border-white/10 hover:border-white/30 rounded-3xl p-6 transition-all duration-300 hover:-translate-y-0.5"
                   >
                     <div className="flex justify-between items-start">
-                      <h3 className="text-white text-xl font-medium">{site.name}</h3>
-                      <span className={`px-3 py-1 text-xs font-mono rounded-full border ${style.badge}`}>
+                      <h3 className="text-white text-xl font-medium">
+                        {site.name}
+                      </h3>
+                      <span
+                        className={`px-3 py-1 text-xs font-mono rounded-full border ${style.badge}`}
+                      >
                         {style.label}
                       </span>
                     </div>
 
                     <p className="text-white/40 text-sm mt-3">
-                      {site.status?.lastTitle || "Monitoring for important updates"}
+                      {site.status?.lastTitle ||
+                        "Monitoring for important updates"}
                     </p>
 
                     <p className="text-white/25 text-xs mt-3 font-mono">

@@ -29,6 +29,12 @@ onboardingComplete: {
   type: Boolean,
   default: false,
 },
+
+telegramChatId: {
+  type: String,
+  default: null,
+},
+
   },
   { timestamps: true }
 );
