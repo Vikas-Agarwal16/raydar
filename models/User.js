@@ -40,6 +40,11 @@ lastDigestSentAt: {
   default: null,
 },
 
+pushSubscription: {
+  type: Object,
+  default: null,
+},
+
   },
   { timestamps: true }
 );

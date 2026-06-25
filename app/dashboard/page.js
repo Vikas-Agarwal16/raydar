@@ -6,6 +6,8 @@ import { getSiteBySlug, CATEGORIES } from "@/lib/sites";
 import { getSiteStatusMap } from "@/lib/getSiteStatuses";
 import SignOutButton from "@/components/SignOutButton";
 
+import EnablePushButton from "@/components/EnablePushButton";
+
 const STATUS_STYLES = {
   CRITICAL: {
     label: "CRITICAL",
@@ -107,7 +109,7 @@ export default async function DashboardPage() {
                 Connect Telegram
               </a>
             )}
-
+<EnablePushButton />
             <a
               href="/settings"
               className="px-4 py-1.5 text-xs font-mono rounded-full border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors"
