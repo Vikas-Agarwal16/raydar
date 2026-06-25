@@ -107,9 +107,17 @@ export default async function DashboardPage() {
                 Connect Telegram
               </a>
             )}
+
+            <a
+              href="/settings"
+              className="px-4 py-1.5 text-xs font-mono rounded-full border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors"
+            >
+              Manage Categories
+            </a>
+
             <SignOutButton />
           </div>
-        </div>
+        </div> {/* ← Fixed: Missing closing div added here */}
 
         <h1 className="text-4xl font-semibold text-white tracking-tight mb-2">
           Welcome back, {user.name?.split(" ")[0]}
