@@ -35,6 +35,11 @@ telegramChatId: {
   default: null,
 },
 
+lastDigestSentAt: {
+  type: Date,
+  default: null,
+},
+
   },
   { timestamps: true }
 );
