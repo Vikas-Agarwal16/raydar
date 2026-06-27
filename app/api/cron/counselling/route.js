@@ -9,7 +9,7 @@ export async function GET(request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const summary = await runCategoryScan("exams");
+  const summary = await runCategoryScan("counselling");
 
   return NextResponse.json({ ranAt: new Date().toISOString(), summary });
 }
