@@ -1,44 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { CATEGORIES, getSitesByCategory, SITES } from "@/lib/sites";
 
-const SECTORS = [
-  {
-    label: "Exams",
-    count: 7,
-    color: "#E8447A",
-    desc: "Major entrance exams & government job notifications",
-    sites: ["NTA", "JEE Main", "NEET", "GATE", "CAT", "SSC", "UPSC"],
-  },
-  {
-    label: "Internships",
-    count: 6,
-    color: "#3B82F6",
-    desc: "Top tech companies & platforms offering internships",
-    sites: ["Microsoft", "Google", "Amazon", "Internshala", "Unstop", "LinkedIn"],
-  },
-  {
-    label: "Hackathons",
-    count: 4,
-    color: "#8B5CF6",
-    desc: "Coding competitions & innovation challenges",
-    sites: ["Devfolio", "Unstop", "AICTE", "National Scholarship Portal"],
-  },
-  {
-    label: "Counselling",
-    count: 4,
-    color: "#10B981",
-    desc: "Seat allotment & counselling updates",
-    sites: ["JoSAA", "CSAB", "MCC", "UPTAC"],
-  },
-];
+const SECTOR_META = {
+  exams: { color: "#E8447A", desc: "Major entrance exams & board notifications" },
+  internships: { color: "#3B82F6", desc: "Internship listings from companies & platforms" },
+  hackathons: { color: "#8B5CF6", desc: "Coding competitions & innovation challenges" },
+  counselling: { color: "#10B981", desc: "Seat allotment & counselling updates" },
+};
+
+const SECTORS = Object.entries(CATEGORIES).map(([key, cat]) => {
+  const sites = getSitesByCategory(key);
+  return {
+    key,
+    label: cat.label,
+    count: sites.length,
+    sites: sites.map((s) => s.name),
+    ...SECTOR_META[key],
+  };
+});
 
 export default function Sectors() {
   const [openIndex, setOpenIndex] = useState(null);
-
-  const toggleCard = (index) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
+  const toggleCard = (index) => setOpenIndex(openIndex === index ? null : index);
 
   return (
     <section id="sectors" className="border-b border-white/[0.08] px-6 py-24 md:py-28">
@@ -46,7 +31,7 @@ export default function Sectors() {
         <div className="text-center mb-12">
           <p className="text-[13px] font-medium uppercase tracking-[2px] text-[#E8447A]">COVERAGE</p>
           <h2 className="font-display mt-4 text-4xl md:text-5xl tracking-tighter leading-tight text-white">
-            21 sites, sorted into 4 things you actually care about.
+            {SITES.length} sites, sorted into 4 things you actually care about.
           </h2>
         </div>
 
@@ -56,14 +41,13 @@ export default function Sectors() {
 
             return (
               <div
-                key={sector.label}
-                className={`group rounded-3xl border transition-all duration-300 overflow-hidden ${
+                key={sector.key}
+                className={`rounded-3xl border transition-all duration-300 overflow-hidden ${
                   isOpen
                     ? "border-[#E8447A]/60 bg-white/[0.05] shadow-xl"
                     : "border-white/[0.08] bg-white/[0.02] hover:border-white/20"
                 }`}
               >
-                {/* Header */}
                 <button
                   onClick={() => toggleCard(index)}
                   className="w-full p-8 md:p-10 text-left flex items-start justify-between hover:bg-white/[0.03] transition-colors"
@@ -87,7 +71,6 @@ export default function Sectors() {
                   </div>
                 </button>
 
-                {/* Expanded Content - Much Richer */}
                 <div
                   className={`overflow-hidden transition-all duration-400 ${
                     isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
@@ -95,17 +78,16 @@ export default function Sectors() {
                 >
                   <div className="px-8 md:px-10 pb-10">
                     <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-8" />
-
-                    <p className="text-white/70 text-sm mb-6">Popular platforms we track:</p>
+                    <p className="text-white/70 text-sm mb-6">Platforms we track:</p>
 
                     <div className="grid grid-cols-2 gap-3">
-                      {sector.sites.map((site, i) => (
+                      {sector.sites.map((siteName) => (
                         <div
-                          key={i}
-                          className="flex items-center gap-3 rounded-2xl bg-white/[0.04] border border-white/[0.1] px-5 py-4 hover:bg-white/[0.08] hover:border-white/30 group-hover/item:scale-[1.02] transition-all"
+                          key={siteName}
+                          className="flex items-center gap-3 rounded-2xl bg-white/[0.04] border border-white/[0.1] px-5 py-4 hover:bg-white/[0.08] hover:border-white/30 transition-all"
                         >
                           <div className="h-2 w-2 rounded-full bg-white/40" />
-                          <span className="text-white/90 text-[15px] font-medium">{site}</span>
+                          <span className="text-white/90 text-[15px] font-medium">{siteName}</span>
                         </div>
                       ))}
                     </div>

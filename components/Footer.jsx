@@ -13,7 +13,7 @@ export default function Footer() {
             <p className="text-white/60 mt-1">Instant setup. Instant pings. No email needed.</p>
           </div>
           <a
-            href="#"
+            href="/signup"
             className="inline-flex items-center gap-3 rounded-full bg-[#E8447A] px-8 py-3.5 font-medium text-white hover:bg-white hover:text-black transition-all whitespace-nowrap"
           >
             Connect on Telegram →
@@ -81,7 +81,7 @@ export default function Footer() {
         <div className="mt-20 pt-8 border-t border-white/[0.08] text-xs text-white/40 flex flex-col md:flex-row justify-between items-center gap-4">
           <p>© {year} Raydar. Made in India with ❤️</p>
           <p className="text-center md:text-right">
-            Not affiliated with NTA, JoSAA, Microsoft, or any tracked site.
+           Not affiliated with NTA, JoSAA, Amazon, or any tracked site.
           </p>
         </div>
       </div>
