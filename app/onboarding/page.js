@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import OnboardingForm from "@/components/OnboardingForm";
+import RadarBackground from "@/components/RadarBackground";
 
 export default async function OnboardingPage() {
   const session = await auth();
@@ -19,7 +20,8 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0B0C10] flex items-center justify-center px-4">
+    <main className="relative min-h-screen bg-[#06080A] flex items-center justify-center px-4 py-12">
+      <RadarBackground />
       <OnboardingForm />
     </main>
   );

@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import RadarScope from "./RadarScope";
 
 const QUESTIONS = [
   { key: "exams", label: "Are you preparing for any entrance exams?", icon: "📚" },
   { key: "internships", label: "Are you looking for internships?", icon: "💼" },
   { key: "hackathons", label: "Are you interested in hackathons?", icon: "💻" },
+  { key: "counselling", label: "Want updates on counselling/admissions?", icon: "🎓" },
 ];
 
 export default function OnboardingForm() {
@@ -15,6 +17,7 @@ export default function OnboardingForm() {
     exams: false,
     internships: false,
     hackathons: false,
+    counselling: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -55,53 +58,52 @@ export default function OnboardingForm() {
   };
 
   return (
-    <div className="w-full max-w-md bg-[#0B0C10] border border-white/10 rounded-3xl p-10">
-      <div className="text-center mb-10">
-        {/* Brand Consistent Icon */}
-        <div className="w-14 h-14 mx-auto mb-6 rounded-2xl bg-[#E8447A] flex items-center justify-center shadow-lg shadow-[#E8447A]/30">
-          <span className="text-3xl font-bold text-white tracking-tighter">R</span>
+    <div className="relative z-10 w-full max-w-4xl flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+      <RadarScope questions={QUESTIONS} answers={answers} />
+
+      <div className="w-full max-w-md bg-[#0B0C10]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-10 shadow-2xl shadow-black/40">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-semibold text-white tracking-tight">Quick Setup</h1>
+          <p className="text-white/60 mt-3 text-[15px] leading-relaxed">
+            Select the areas you want us to monitor.<br />
+            You can change this anytime later.
+          </p>
         </div>
 
-        <h1 className="text-3xl font-semibold text-white tracking-tight">Quick Setup</h1>
-        <p className="text-white/60 mt-3 text-[15px] leading-relaxed">
-          Select the areas you want us to monitor.<br />
-          You can change this anytime later.
-        </p>
+        <div className="space-y-4 mb-10">
+          {QUESTIONS.map((q) => (
+            <button
+              key={q.key}
+              onClick={() => toggle(q.key)}
+              className={`w-full flex items-center gap-4 text-left px-6 py-5 rounded-2xl border transition-all duration-200 group ${
+                answers[q.key]
+                  ? "border-[#E8447A] bg-[#E8447A]/10 text-white"
+                  : "border-white/10 hover:border-white/30 text-white/70 hover:text-white"
+              }`}
+            >
+              <span className="text-3xl transition-transform group-hover:scale-110">{q.icon}</span>
+              <span className="font-medium text-[15px]">{q.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {error && (
+          <p className="text-red-400 text-sm mb-6 text-center">{error}</p>
+        )}
+
+        <button
+          onClick={handleSubmit}
+          disabled={loading || !hasSelection}
+          className="w-full bg-[#E8447A] hover:bg-[#D63A6C] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-2xl py-4 transition-all active:scale-[0.985]"
+        >
+          {loading 
+            ? "Saving Preferences..." 
+            : !hasSelection 
+              ? "Select at least one option to continue" 
+              : "Continue to Dashboard"
+          }
+        </button>
       </div>
-
-      <div className="space-y-4 mb-10">
-        {QUESTIONS.map((q) => (
-          <button
-            key={q.key}
-            onClick={() => toggle(q.key)}
-            className={`w-full flex items-center gap-4 text-left px-6 py-5 rounded-2xl border transition-all duration-200 group ${
-              answers[q.key]
-                ? "border-[#E8447A] bg-[#E8447A]/10 text-white"
-                : "border-white/10 hover:border-white/30 text-white/70 hover:text-white"
-            }`}
-          >
-            <span className="text-3xl transition-transform group-hover:scale-110">{q.icon}</span>
-            <span className="font-medium text-[15px]">{q.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {error && (
-        <p className="text-red-400 text-sm mb-6 text-center">{error}</p>
-      )}
-
-      <button
-        onClick={handleSubmit}
-        disabled={loading || !hasSelection}
-        className="w-full bg-[#E8447A] hover:bg-[#D63A6C] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-2xl py-4 transition-all active:scale-[0.985]"
-      >
-        {loading 
-          ? "Saving Preferences..." 
-          : !hasSelection 
-            ? "Select at least one option to continue" 
-            : "Continue to Dashboard"
-        }
-      </button>
     </div>
   );
 }
