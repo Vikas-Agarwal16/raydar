@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import dbConnect from "@/lib/mongodb";
@@ -5,42 +6,21 @@ import User from "@/models/User";
 import { getSiteBySlug, CATEGORIES } from "@/lib/sites";
 import { getSiteStatusMap } from "@/lib/getSiteStatuses";
 import SignOutButton from "@/components/SignOutButton";
-
 import EnablePushButton from "@/components/EnablePushButton";
+import SiteExplorer from "@/components/dashboard/SiteExplorer";
+import ActivityFeed from "@/components/dashboard/ActivityFeed";
+import TelegramStatus from "@/components/dashboard/TelegramStatus";
+import ChannelStatusCard from "@/components/dashboard/ChannelStatusCard";
+import { formatRelativeTime, isToday } from "@/lib/dashboardHelpers";
 
-const STATUS_STYLES = {
-  CRITICAL: {
-    label: "CRITICAL",
-    badge: "bg-[#DC2626]/15 text-[#DC2626] border-[#DC2626]/30",
-  },
-  SOON: {
-    label: "SOON",
-    badge: "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30",
-  },
-  MINOR: {
-    label: "MINOR",
-    badge: "bg-[#5B7FFF]/15 text-[#7FA8FF] border-[#5B7FFF]/30",
-  },
-  NOISE: { label: "CLEAR", badge: "bg-white/10 text-white/50 border-white/10" },
-  WATCHING: {
-    label: "WATCHING",
-    badge: "bg-white/5 text-white/40 border-white/10",
-  },
-};
-
-function isToday(date) {
-  if (!date) return false;
-  return new Date(date).toDateString() === new Date().toDateString();
-}
-
-function formatRelativeTime(date) {
-  if (!date) return "Never";
-  const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+function StatusDot({ active }) {
+  return (
+    <span
+      className={`w-1.5 h-1.5 rounded-full ${
+        active ? "bg-[#34D399]" : "bg-white/20"
+      }`}
+    />
+  );
 }
 
 export default async function DashboardPage() {
@@ -48,8 +28,9 @@ export default async function DashboardPage() {
   if (!session) redirect("/signin");
 
   await dbConnect();
+
   const user = await User.findById(session.user.id).select(
-    "enabledSites onboardingComplete name telegramChatId",
+    "enabledSites onboardingComplete name telegramChatId pushSubscription lastDigestSentAt"
   );
 
   if (!user?.onboardingComplete) redirect("/onboarding");
@@ -57,23 +38,32 @@ export default async function DashboardPage() {
   const sites = user.enabledSites.map(getSiteBySlug).filter(Boolean);
   const statusMap = await getSiteStatusMap(sites.map((s) => s.slug));
 
+  function serializeStatus(status) {
+    if (!status) return null;
+
+    return {
+      severity: status.severity,
+      lastTitle: status.lastTitle,
+      lastCheckedAt: status.lastCheckedAt
+        ? new Date(status.lastCheckedAt).toISOString()
+        : null,
+      lastChangedAt: status.lastChangedAt
+        ? new Date(status.lastChangedAt).toISOString()
+        : null,
+    };
+  }
+
   const sitesWithStatus = sites.map((site) => ({
     ...site,
-    status: statusMap[site.slug] || null,
+    status: serializeStatus(statusMap[site.slug]),
   }));
-
-  const grouped = sitesWithStatus.reduce((acc, site) => {
-    acc[site.category] = acc[site.category] || [];
-    acc[site.category].push(site);
-    return acc;
-  }, {});
 
   const alertsToday = sitesWithStatus.filter(
     (site) =>
       site.status &&
       (site.status.severity === "CRITICAL" ||
         site.status.severity === "SOON") &&
-      isToday(site.status.lastChangedAt),
+      isToday(site.status.lastChangedAt)
   ).length;
 
   const lastScanDate = sitesWithStatus
@@ -81,124 +71,111 @@ export default async function DashboardPage() {
     .filter(Boolean)
     .sort((a, b) => new Date(b) - new Date(a))[0];
 
+  const categoryCount = new Set(
+    sitesWithStatus.map((s) => s.category)
+  ).size;
+
+  // Single timestamp shared across the whole page
+  const now = Date.now();
+
+  const recentActivity = sitesWithStatus
+    .filter((s) => s.status?.lastChangedAt)
+    .sort(
+      (a, b) =>
+        new Date(b.status.lastChangedAt) -
+        new Date(a.status.lastChangedAt)
+    )
+    .slice(0, 6);
+
+  const stats = [
+    { label: "Sites Watching", value: sites.length },
+    { label: "Categories", value: categoryCount },
+    { label: "Alerts Today", value: alertsToday },
+    { label: "Last Scan", value: formatRelativeTime(lastScanDate) },
+  ];
+
   return (
-    <main className="min-h-screen bg-[#06080A] px-6 py-12 md:px-12">
+    <main className="min-h-screen bg-[#06080A] px-6 py-12 md:px-12 overflow-x-hidden">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-12">
+       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#E8447A] flex items-center justify-center">
               <span className="text-white text-2xl font-bold">R</span>
             </div>
+
             <span className="font-display text-3xl font-semibold tracking-tight text-white">
               Ray<span className="text-[#E8447A]">dar</span>
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
-            {user.telegramChatId ? (
-              <span className="px-3 py-1.5 text-xs font-mono rounded-full border border-[#5B7FFF]/30 bg-[#5B7FFF]/10 text-[#7FA8FF]">
-                Telegram Connected
-              </span>
-            ) : (
-              <a
-                href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}?start=${session.user.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-1.5 text-xs font-mono rounded-full border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors"
-              >
-                Connect Telegram
-              </a>
-            )}
-<EnablePushButton />
-            <a
+          <div className="flex items-center gap-2 flex-wrap">
+            <TelegramStatus
+              initiallyConnected={!!user.telegramChatId}
+              connectUrl={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}?start=${session.user.id}`}
+            />
+
+            <EnablePushButton />
+
+            <div className="w-px h-5 bg-white/10 mx-1" />
+
+            <Link
               href="/settings"
               className="px-4 py-1.5 text-xs font-mono rounded-full border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors"
             >
               Manage Categories
-            </a>
+            </Link>
 
             <SignOutButton />
           </div>
-        </div> {/* ← Fixed: Missing closing div added here */}
+        </div>
 
-        <h1 className="text-4xl font-semibold text-white tracking-tight mb-2">
-          Welcome back, {user.name?.split(" ")[0]}
-        </h1>
-        <p className="text-white/60 text-lg">
-          Monitoring{" "}
-          <span className="text-white font-medium">
-            {sites.length} key sources
-          </span>
-        </p>
+        <div className="mb-8">
+          <h1 className="text-3xl font-semibold text-white tracking-tight mb-1">
+            Welcome back, {user.name?.split(" ")[0]}
+          </h1>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10 mb-16">
-          {[
-            { label: "Sites Watching", value: sites.length },
-            { label: "Categories", value: Object.keys(grouped).length },
-            { label: "Alerts Today", value: alertsToday },
-            { label: "Last Scan", value: formatRelativeTime(lastScanDate) },
-          ].map((stat, i) => (
+          <p className="text-white/50 text-sm">
+            Monitoring{" "}
+            <span className="text-white font-medium">
+              {sites.length} key sources
+            </span>
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+          {stats.map((stat, i) => (
             <div
               key={i}
-              className="bg-white/[0.03] border border-white/10 rounded-3xl p-6"
+              className="bg-white/[0.03] border border-white/10 rounded-2xl p-4"
             >
-              <p className="text-4xl font-semibold text-white mb-1">
+              <p className="text-2xl font-semibold text-white mb-0.5">
                 {stat.value}
               </p>
-              <p className="text-white/50 text-sm font-mono tracking-widest">
+
+              <p className="text-white/40 text-[11px] font-mono tracking-widest uppercase">
                 {stat.label}
               </p>
             </div>
           ))}
         </div>
 
-        {Object.entries(grouped).map(([category, categorySites]) => (
-          <div key={category} className="mb-16">
-            <div className="flex items-center gap-4 mb-6">
-              <h2 className="text-white/80 uppercase tracking-[3px] text-sm font-mono">
-                {CATEGORIES[category]?.label || category}
-              </h2>
-              <div className="h-px bg-white/10 flex-1" />
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8">
+          <SiteExplorer
+            sites={sitesWithStatus}
+            categories={CATEGORIES}
+            now={now}
+          />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {categorySites.map((site) => {
-                const style = site.status
-                  ? STATUS_STYLES[site.status.severity] || STATUS_STYLES.NOISE
-                  : STATUS_STYLES.WATCHING;
+          <aside className="space-y-6">
+            <ChannelStatusCard
+              telegramConnected={!!user.telegramChatId}
+              pushSubscribed={!!user.pushSubscription}
+              lastDigestSentAt={user.lastDigestSentAt}
+            />
 
-                return (
-                  <div
-                    key={site.slug}
-                    className="group bg-white/[0.02] border border-white/10 hover:border-white/30 rounded-3xl p-6 transition-all duration-300 hover:-translate-y-0.5"
-                  >
-                    <div className="flex justify-between items-start">
-                      <h3 className="text-white text-xl font-medium">
-                        {site.name}
-                      </h3>
-                      <span
-                        className={`px-3 py-1 text-xs font-mono rounded-full border ${style.badge}`}
-                      >
-                        {style.label}
-                      </span>
-                    </div>
-
-                    <p className="text-white/40 text-sm mt-3">
-                      {site.status?.lastTitle ||
-                        "Monitoring for important updates"}
-                    </p>
-
-                    <p className="text-white/25 text-xs mt-3 font-mono">
-                      {site.status
-                        ? `Checked ${formatRelativeTime(site.status.lastCheckedAt)}`
-                        : "Scraper not live yet"}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+            <ActivityFeed items={recentActivity} />
+          </aside>
+        </div>
       </div>
     </main>
   );

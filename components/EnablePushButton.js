@@ -4,9 +4,15 @@ import { useState, useEffect } from "react";
 
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
   const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+
+  return Uint8Array.from(
+    [...rawData].map((char) => char.charCodeAt(0))
+  );
 }
 
 export default function EnablePushButton() {
@@ -32,6 +38,7 @@ export default function EnablePushButton() {
       const registration = await navigator.serviceWorker.register("/sw.js");
 
       const permission = await Notification.requestPermission();
+
       if (permission !== "granted") {
         setStatus("denied");
         return;
@@ -46,11 +53,15 @@ export default function EnablePushButton() {
 
       const res = await fetch("/api/push/subscribe", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(subscription.toJSON()),
       });
 
-      if (!res.ok) throw new Error("Failed to save subscription");
+      if (!res.ok) {
+        throw new Error("Failed to save subscription");
+      }
 
       setStatus("subscribed");
     } catch (err) {
@@ -59,12 +70,41 @@ export default function EnablePushButton() {
     }
   }
 
-  // Matches the "Telegram Connected" badge — same blue-tint pattern,
-  // signals "this channel is active" using the same visual language.
+  async function handleDisablePush() {
+    setStatus("subscribing");
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+
+      if (subscription) {
+        await subscription.unsubscribe();
+      }
+
+      await fetch("/api/push/unsubscribe", {
+        method: "POST",
+      });
+
+      setStatus("idle");
+    } catch (err) {
+      console.error("Push unsubscribe failed:", err);
+      setStatus("error");
+    }
+  }
+
   if (status === "subscribed") {
     return (
-      <span className="px-3 py-1.5 text-xs font-mono rounded-full border border-[#5B7FFF]/30 bg-[#5B7FFF]/10 text-[#7FA8FF]">
+      <span className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-mono rounded-full border border-[#5B7FFF]/30 bg-[#5B7FFF]/10 text-[#7FA8FF]">
         Push Enabled
+
+        <button
+          type="button"
+          onClick={handleDisablePush}
+          className="text-[#7FA8FF]/60 hover:text-[#7FA8FF] transition-colors"
+          aria-label="Disable push notifications"
+        >
+          ×
+        </button>
       </span>
     );
   }
@@ -77,7 +117,6 @@ export default function EnablePushButton() {
     );
   }
 
-  // Matches the outlined-pill style used by "Connect Telegram" / "Manage Categories"
   return (
     <button
       onClick={handleEnablePush}

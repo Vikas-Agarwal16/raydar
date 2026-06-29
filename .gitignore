@@ -49,3 +49,6 @@ test-db.js
 amazon_*.json
 *-internships.html
 unstop.html
+
+# swc cache
+.swc/
