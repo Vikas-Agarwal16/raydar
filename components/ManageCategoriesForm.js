@@ -2,101 +2,122 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import RadarScope from "./RadarScope";
+import { LayoutGrid, ArrowRight, ShieldCheck } from "lucide-react";
+import RadarVisual from "./RadarVisual";
+import CategoryToggleCard from "./CategoryToggleCard";
+import { ONBOARDING_CATEGORIES } from "@/lib/onboardingCategories";
 
-const QUESTIONS = [
-  { key: "exams", label: "Entrance exams", icon: "📚" },
-  { key: "internships", label: "Internships", icon: "💼" },
-  { key: "hackathons", label: "Hackathons", icon: "💻" },
-  { key: "counselling", label: "Counselling updates", icon: "🎓" },
-];
-
-export default function ManageCategoriesForm({ initialAnswers }) {
+export default function ManageCategoriesForm({ initialSelected = {} }) {
   const router = useRouter();
-  const [answers, setAnswers] = useState(initialAnswers);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [selected, setSelected] = useState(initialSelected);
+  const [saving, setSaving] = useState(false);
+  const [savedMsg, setSavedMsg] = useState("");
 
-  const toggle = (key) => {
-    setAnswers((prev) => ({ ...prev, [key]: !prev[key] }));
-    setSaved(false);
-  };
+  const trackedCount = Object.values(selected).filter(Boolean).length;
 
-  const hasSelection = Object.values(answers).some((val) => val === true);
+  function toggle(id) {
+    setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
+    setSavedMsg("");
+  }
 
-  const handleSave = async () => {
-    if (!hasSelection) return;
-    setLoading(true);
-    setError("");
+  async function handleSave() {
+    setSaving(true);
+    setSavedMsg("");
+
+    const body = Object.fromEntries(
+      ONBOARDING_CATEGORIES.map((cat) => [cat.id, !!selected[cat.id]])
+    );
 
     try {
       const res = await fetch("/api/user/onboarding", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(answers),
+        body: JSON.stringify(body),
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Something went wrong");
-        return;
-      }
-
-      setSaved(true);
-      router.refresh();
-    } catch (err) {
-      setError("Network error. Try again.");
+      if (!res.ok) throw new Error("Failed to save");
+      setSavedMsg("Saved.");
+    } catch {
+      setSavedMsg("Something went wrong. Try again.");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
-  };
+  }
 
   return (
-    <div className="relative z-10 w-full max-w-4xl flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
-      <RadarScope questions={QUESTIONS} answers={answers} />
+    <div className="grid min-h-screen grid-cols-1 bg-[#06080A] lg:grid-cols-2">
+      <div className="hidden border-r border-white/10 lg:block">
+        <RadarVisual
+          categories={ONBOARDING_CATEGORIES}
+          headingLine1="Your focus."
+          headingLine2="Our watch."
+          description="Raydar monitors the categories you care about and alerts you the moment something changes."
+          trackedCount={trackedCount}
+          totalCount={ONBOARDING_CATEGORIES.length}
+          showLabels={false}
+        />
+      </div>
 
-      <div className="w-full max-w-md bg-[#0B0C10]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-10 shadow-2xl shadow-black/40">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-semibold text-white tracking-tight">Manage Categories</h1>
-          <p className="text-white/60 mt-3 text-[15px] leading-relaxed">
-            Toggle what Raydar watches for you.
-          </p>
-        </div>
+      <div className="flex flex-col justify-center p-6 sm:p-10 lg:p-16">
+        <div className="mx-auto w-full max-w-xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-[0_0_30px_rgba(232,68,122,0.4)]">
+                <LayoutGrid className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">Manage Categories</h2>
+                <p className="text-sm text-white/50">Toggle what Raydar watches for you.</p>
+              </div>
+            </div>
+            <span className="rounded-full bg-pink-500/10 px-4 py-1.5 text-sm font-medium text-pink-400">
+              {ONBOARDING_CATEGORIES.length} Available
+            </span>
+          </div>
 
-        <div className="space-y-4 mb-10">
-          {QUESTIONS.map((q) => (
+          <div className="mt-8 space-y-4">
+            {ONBOARDING_CATEGORIES.map((cat) => (
+              <CategoryToggleCard
+                key={cat.id}
+                category={cat}
+                checked={!!selected[cat.id]}
+                onChange={() => toggle(cat.id)}
+                variant="manage"
+              />
+            ))}
+          </div>
+
+          <div className="mt-6 flex items-start gap-3 rounded-2xl border-l-4 border-pink-500 bg-white/[0.02] p-5">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-pink-500" />
+            <div>
+              <p className="font-medium text-white">You can change these anytime.</p>
+              <p className="text-sm text-white/50">Stay updated on what truly matters to you.</p>
+            </div>
+          </div>
+
+          {savedMsg && (
+            <p className={`mt-4 text-sm ${savedMsg === "Saved." ? "text-emerald-400" : "text-red-400"}`}>
+              {savedMsg}
+            </p>
+          )}
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <button
-              key={q.key}
-              onClick={() => toggle(q.key)}
-              className={`w-full flex items-center gap-4 text-left px-6 py-5 rounded-2xl border transition-all duration-200 group ${
-                answers[q.key]
-                  ? "border-[#E8447A] bg-[#E8447A]/10 text-white"
-                  : "border-white/10 hover:border-white/30 text-white/70 hover:text-white"
-              }`}
+              type="button"
+              onClick={() => router.back()}
+              className="flex-1 rounded-xl border border-white/10 bg-white/[0.02] px-6 py-3 font-medium text-white/80 hover:bg-white/[0.05]"
             >
-              <span className="text-3xl transition-transform group-hover:scale-110">{q.icon}</span>
-              <span className="font-medium text-[15px]">{q.label}</span>
+              Back
             </button>
-          ))}
-        </div>
-
-        {error && <p className="text-red-400 text-sm mb-6 text-center">{error}</p>}
-
-        <div className="flex gap-3">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="flex-1 border border-white/10 hover:border-white/30 text-white/70 hover:text-white font-semibold rounded-2xl py-4 transition-all"
-          >
-            Back
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={loading || !hasSelection}
-            className="flex-1 bg-[#E8447A] hover:bg-[#D63A6C] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-2xl py-4 transition-all active:scale-[0.985]"
-          >
-            {loading ? "Saving..." : saved ? "Saved ✓" : "Save Changes"}
-          </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 px-6 py-3 font-semibold text-white shadow-[0_0_30px_rgba(232,68,122,0.4)] hover:brightness-110 disabled:opacity-60"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

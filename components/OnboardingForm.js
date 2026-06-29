@@ -2,107 +2,121 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import RadarScope from "./RadarScope";
-
-const QUESTIONS = [
-  { key: "exams", label: "Are you preparing for any entrance exams?", icon: "📚" },
-  { key: "internships", label: "Are you looking for internships?", icon: "💼" },
-  { key: "hackathons", label: "Are you interested in hackathons?", icon: "💻" },
-  { key: "counselling", label: "Want updates on counselling/admissions?", icon: "🎓" },
-];
+import { ArrowRight, Sparkles, ShieldCheck } from "lucide-react";
+import RadarVisual from "./RadarVisual";
+import CategoryToggleCard from "./CategoryToggleCard";
+import { ONBOARDING_CATEGORIES } from "@/lib/onboardingCategories";
 
 export default function OnboardingForm() {
   const router = useRouter();
-  const [answers, setAnswers] = useState({
-    exams: false,
-    internships: false,
-    hackathons: false,
-    counselling: false,
-  });
-  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const toggle = (key) => {
-    setAnswers((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  const trackedCount = Object.values(selected).filter(Boolean).length;
+  const hasSelection = trackedCount > 0;
 
-  const hasSelection = Object.values(answers).some((val) => val === true);
+  function toggle(id) {
+    setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
 
-  const handleSubmit = async () => {
-    if (!hasSelection) return;
-
-    setLoading(true);
+  async function handleSubmit() {
+    if (!hasSelection || submitting) return;
+    setSubmitting(true);
     setError("");
+
+    const body = Object.fromEntries(
+      ONBOARDING_CATEGORIES.map((cat) => [cat.id, !!selected[cat.id]])
+    );
 
     try {
       const res = await fetch("/api/user/onboarding", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(answers),
+        body: JSON.stringify(body),
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Something went wrong");
-        return;
-      }
+      if (!res.ok) throw new Error("Failed to save");
 
       router.refresh();
-      await new Promise((resolve) => setTimeout(resolve, 700));
+      await new Promise((r) => setTimeout(r, 150));
       router.push("/dashboard");
-    } catch (err) {
-      setError("Network error. Try again.");
-    } finally {
-      setLoading(false);
+    } catch {
+      setError("Something went wrong. Try again.");
+      setSubmitting(false);
     }
-  };
+  }
 
   return (
-    <div className="relative z-10 w-full max-w-4xl flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
-      <RadarScope questions={QUESTIONS} answers={answers} />
+    <div className="grid min-h-screen grid-cols-1 bg-[#06080A] lg:grid-cols-2">
+      <div className="hidden border-r border-white/10 lg:block">
+        <RadarVisual
+          categories={ONBOARDING_CATEGORIES}
+          headingLine1="We watch."
+          headingLine2="You focus."
+          description="Raydar monitors the categories you care about and alerts you the moment something changes."
+          trackedCount={trackedCount}
+          totalCount={ONBOARDING_CATEGORIES.length}
+          showLabels
+        />
+      </div>
 
-      <div className="w-full max-w-md bg-[#0B0C10]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-10 shadow-2xl shadow-black/40">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-semibold text-white tracking-tight">Quick Setup</h1>
-          <p className="text-white/60 mt-3 text-[15px] leading-relaxed">
-            Select the areas you want us to monitor.<br />
-            You can change this anytime later.
-          </p>
-        </div>
+      <div className="flex flex-col justify-center p-6 sm:p-10 lg:p-16">
+        <div className="mx-auto w-full max-w-xl">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-[0_0_30px_rgba(232,68,122,0.4)]">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">Quick Setup</h1>
+              <p className="text-sm text-white/50">
+                Select the areas you want us to monitor.
+                <br />
+                You can change this anytime later.
+              </p>
+            </div>
+          </div>
 
-        <div className="space-y-4 mb-10">
-          {QUESTIONS.map((q) => (
+          <div className="my-6 h-px w-full bg-white/10" />
+
+          <div className="space-y-4">
+            {ONBOARDING_CATEGORIES.map((cat) => (
+              <CategoryToggleCard
+                key={cat.id}
+                category={cat}
+                checked={!!selected[cat.id]}
+                onChange={() => toggle(cat.id)}
+                variant="onboarding"
+              />
+            ))}
+          </div>
+
+          {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+
+          <div className="mt-8 flex flex-col gap-4 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 text-white/50">
+              <ShieldCheck className="h-5 w-5 shrink-0 text-pink-500" />
+              <p className="text-sm">
+                You can change these anytime.
+                <br className="hidden sm:block" />
+                Stay updated on what truly matters.
+              </p>
+            </div>
+
             <button
-              key={q.key}
-              onClick={() => toggle(q.key)}
-              className={`w-full flex items-center gap-4 text-left px-6 py-5 rounded-2xl border transition-all duration-200 group ${
-                answers[q.key]
-                  ? "border-[#E8447A] bg-[#E8447A]/10 text-white"
-                  : "border-white/10 hover:border-white/30 text-white/70 hover:text-white"
+              type="button"
+              onClick={handleSubmit}
+              disabled={!hasSelection || submitting}
+              className={`flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold text-white transition ${
+                hasSelection
+                  ? "bg-gradient-to-r from-pink-500 to-rose-600 shadow-[0_0_30px_rgba(232,68,122,0.4)] hover:brightness-110"
+                  : "cursor-not-allowed bg-white/10 text-white/40"
               }`}
             >
-              <span className="text-3xl transition-transform group-hover:scale-110">{q.icon}</span>
-              <span className="font-medium text-[15px]">{q.label}</span>
+              {submitting ? "Saving..." : hasSelection ? "Continue" : "Select at least one option to continue"}
+              <ArrowRight className="h-4 w-4" />
             </button>
-          ))}
+          </div>
         </div>
-
-        {error && (
-          <p className="text-red-400 text-sm mb-6 text-center">{error}</p>
-        )}
-
-        <button
-          onClick={handleSubmit}
-          disabled={loading || !hasSelection}
-          className="w-full bg-[#E8447A] hover:bg-[#D63A6C] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-2xl py-4 transition-all active:scale-[0.985]"
-        >
-          {loading 
-            ? "Saving Preferences..." 
-            : !hasSelection 
-              ? "Select at least one option to continue" 
-              : "Continue to Dashboard"
-          }
-        </button>
       </div>
     </div>
   );
