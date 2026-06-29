@@ -1,4 +1,5 @@
 import { Space_Grotesk } from "next/font/google";
+import { SITES } from "@/lib/sites";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -9,8 +10,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata = {
   title: "Raydar — Apna kaam btao, aur bhul jao",
-  description:
-    "Raydar watches 21 Indian exam, internship, hackathon and counselling sites so you don't have to keep refreshing them.",
+  description: `Raydar watches ${SITES.length} Indian exam, internship, hackathon and counselling sites so you don't have to keep refreshing them.`,
 };
 
 export default function RootLayout({ children }) {

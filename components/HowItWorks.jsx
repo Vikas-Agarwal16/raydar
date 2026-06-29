@@ -6,17 +6,17 @@ const STEPS = [
   {
     number: "01",
     title: "Tell us what you're chasing",
-    text: "Pick your exam, your interest in internships or hackathons, and your year. Raydar auto-enables the sites that actually matter to you.",
+    text: "Pick your exams, internships, hackathons, or counselling you care about.",
   },
   {
     number: "02",
     title: "Raydar checks every 20 minutes",
-    text: "Exams, internships, hackathons and counselling sites are each swept on their own schedule, around the clock. You don't open a single tab.",
+    text: "Exams, internshala, JoSAA and more are scanned in smart intervals. You don't even have to open a single tab.",
   },
   {
     number: "03",
     title: "You hear about it only if it matters",
-    text: "A new circular gets filtered out. An admit card release gets pushed to you instantly on Telegram and push — the moment it's live.",
+    text: "A real update gets pushed to you instantly on Telegram and push — the important stuff, only.",
   },
 ];
 
