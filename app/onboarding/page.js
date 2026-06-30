@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
@@ -28,7 +29,17 @@ export async function PATCH(req) {
   return Response.json({ ok: true, enabledSites });
 }
 
-export default function OnboardingPage() {
+export default async function OnboardingPage() {
+  const session = await auth();
+
+  if (session?.user?.id) {
+    await dbConnect();
+    const user = await User.findById(session.user.id).select("onboardingComplete");
+
+    if (user?.onboardingComplete) {
+      redirect("/dashboard");
+    }
+  }
+
   return <OnboardingForm />;
 }
-  
