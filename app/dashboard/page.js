@@ -1,68 +1,29 @@
-import Link from "next/link";
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
-import dbConnect from "@/lib/mongodb";
-import User from "@/models/User";
-import { getSiteBySlug, CATEGORIES } from "@/lib/sites";
-import { getSiteStatusMap } from "@/lib/getSiteStatuses";
-import SignOutButton from "@/components/SignOutButton";
+import { getDashboardData } from "@/lib/getDashboardData";
+import { CATEGORIES } from "@/lib/sites";
 import EnablePushButton from "@/components/EnablePushButton";
 import SiteExplorer from "@/components/dashboard/SiteExplorer";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import TelegramStatus from "@/components/dashboard/TelegramStatus";
 import ChannelStatusCard from "@/components/dashboard/ChannelStatusCard";
+import ScanningChart from "@/components/dashboard/ScanningChart";
 import { formatRelativeTime, isToday } from "@/lib/dashboardHelpers";
+import { Eye, LayoutGrid, BellRing, Clock3, Radar } from "lucide-react";
 
-function StatusDot({ active }) {
-  return (
-    <span
-      className={`w-1.5 h-1.5 rounded-full ${
-        active ? "bg-[#34D399]" : "bg-white/20"
-      }`}
-    />
-  );
-}
+const STAT_ICONS = [Eye, LayoutGrid, BellRing, Clock3];
+const STAT_TONES = [
+  "bg-[#E8447A]/15 text-[#E8447A]",
+  "bg-[#8B5CF6]/15 text-[#8B5CF6]",
+  "bg-[#F59E0B]/15 text-[#F59E0B]",
+  "bg-[#34D399]/15 text-[#34D399]",
+];
 
 export default async function DashboardPage() {
-  const session = await auth();
-  if (!session) redirect("/signin");
-
-  await dbConnect();
-
-  const user = await User.findById(session.user.id).select(
-    "enabledSites onboardingComplete name telegramChatId pushSubscription lastDigestSentAt"
-  );
-
-  if (!user?.onboardingComplete) redirect("/onboarding");
-
-  const sites = user.enabledSites.map(getSiteBySlug).filter(Boolean);
-  const statusMap = await getSiteStatusMap(sites.map((s) => s.slug));
-
-  function serializeStatus(status) {
-    if (!status) return null;
-
-    return {
-      severity: status.severity,
-      lastTitle: status.lastTitle,
-      lastCheckedAt: status.lastCheckedAt
-        ? new Date(status.lastCheckedAt).toISOString()
-        : null,
-      lastChangedAt: status.lastChangedAt
-        ? new Date(status.lastChangedAt).toISOString()
-        : null,
-    };
-  }
-
-  const sitesWithStatus = sites.map((site) => ({
-    ...site,
-    status: serializeStatus(statusMap[site.slug]),
-  }));
+  const { session, user, sitesWithStatus, now } = await getDashboardData();
 
   const alertsToday = sitesWithStatus.filter(
     (site) =>
       site.status &&
-      (site.status.severity === "CRITICAL" ||
-        site.status.severity === "SOON") &&
+      (site.status.severity === "CRITICAL" || site.status.severity === "SOON") &&
       isToday(site.status.lastChangedAt)
   ).length;
 
@@ -71,112 +32,125 @@ export default async function DashboardPage() {
     .filter(Boolean)
     .sort((a, b) => new Date(b) - new Date(a))[0];
 
-  const categoryCount = new Set(
-    sitesWithStatus.map((s) => s.category)
-  ).size;
-
-  // Single timestamp shared across the whole page
-  const now = Date.now();
+  const categoryCount = new Set(sitesWithStatus.map((s) => s.category)).size;
 
   const recentActivity = sitesWithStatus
     .filter((s) => s.status?.lastChangedAt)
-    .sort(
-      (a, b) =>
-        new Date(b.status.lastChangedAt) -
-        new Date(a.status.lastChangedAt)
-    )
+    .sort((a, b) => new Date(b.status.lastChangedAt) - new Date(a.status.lastChangedAt))
     .slice(0, 6);
 
   const stats = [
-    { label: "Sites Watching", value: sites.length },
-    { label: "Categories", value: categoryCount },
-    { label: "Alerts Today", value: alertsToday },
-    { label: "Last Scan", value: formatRelativeTime(lastScanDate) },
+    { label: "Sites Watching", sublabel: "Actively monitored", value: sitesWithStatus.length },
+    { label: "Categories", sublabel: "Custom categories", value: categoryCount },
+    { label: "Alerts Today", sublabel: "You're all caught up!", value: alertsToday },
+    {
+      label: "Last Scan",
+      sublabel: lastScanDate
+        ? new Date(lastScanDate).toLocaleString("en-IN", {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          })
+        : "Not yet",
+      value: formatRelativeTime(lastScanDate, now),
+    },
   ];
 
   return (
-    <main className="min-h-screen bg-[#06080A] px-6 py-12 md:px-12 overflow-x-hidden">
-      <div className="max-w-6xl mx-auto">
-       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#E8447A] flex items-center justify-center">
-              <span className="text-white text-2xl font-bold">R</span>
-            </div>
+    <>
+      {/* top bar: channel pills only, manage categories moved to /settings */}
+      <div className="flex items-center justify-end gap-2 mb-8">
+        <TelegramStatus
+          initiallyConnected={!!user.telegramChatId}
+          connectUrl={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}?start=${session.user.id}`}
+        />
+        <EnablePushButton />
+      </div>
 
-            <span className="font-display text-3xl font-semibold tracking-tight text-white">
-              Ray<span className="text-[#E8447A]">dar</span>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <TelegramStatus
-              initiallyConnected={!!user.telegramChatId}
-              connectUrl={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}?start=${session.user.id}`}
-            />
-
-            <EnablePushButton />
-
-            <div className="w-px h-5 bg-white/10 mx-1" />
-
-            <Link
-              href="/settings"
-              className="px-4 py-1.5 text-xs font-mono rounded-full border border-white/20 text-white/70 hover:border-white/40 hover:text-white transition-colors"
-            >
-              Manage Categories
-            </Link>
-
-            <SignOutButton />
-          </div>
+      {/* greeting + hero glow illustration */}
+      <div className="relative mb-8">
+        <div className="absolute -top-10 right-0 w-72 h-44 pointer-events-none opacity-80 hidden sm:block">
+          <div className="absolute top-2 right-8 w-32 h-32 rounded-full bg-[#E8447A]/15 blur-3xl" />
+          <svg viewBox="0 0 280 176" className="absolute inset-0 w-full h-full" fill="none">
+            <circle cx="220" cy="60" r="14" fill="none" stroke="#E8447A" strokeOpacity="0.5" strokeWidth="1.5" />
+            <circle cx="220" cy="60" r="32" fill="none" stroke="#E8447A" strokeOpacity="0.3" strokeWidth="1.5" />
+            <circle cx="220" cy="60" r="50" fill="none" stroke="#E8447A" strokeOpacity="0.15" strokeWidth="1.5" />
+            <circle cx="220" cy="60" r="3" fill="#E8447A" />
+            <path d="M40 150 L90 110 L140 130 L190 90 L260 130" stroke="white" strokeOpacity="0.06" strokeWidth="1" />
+          </svg>
         </div>
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-semibold text-white tracking-tight mb-1">
-            Welcome back, {user.name?.split(" ")[0]}
-          </h1>
+        <h1 className="relative text-3xl font-semibold text-white tracking-tight mb-1">
+          Welcome back, {user.name?.split(" ")[0]} 👋
+        </h1>
+        <p className="relative text-white/50 text-sm">
+          Here&apos;s what&apos;s happening with your monitored sources.
+        </p>
+      </div>
 
-          <p className="text-white/50 text-sm">
-            Monitoring{" "}
-            <span className="text-white font-medium">
-              {sites.length} key sources
-            </span>
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
-          {stats.map((stat, i) => (
+      {/* stat cards row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 relative">
+        {stats.map((stat, i) => {
+          const Icon = STAT_ICONS[i];
+          return (
             <div
               key={i}
-              className="bg-white/[0.03] border border-white/10 rounded-2xl p-4"
+              className="bg-white/[0.02] border border-white/10 rounded-2xl p-4 flex items-center gap-3"
             >
-              <p className="text-2xl font-semibold text-white mb-0.5">
-                {stat.value}
-              </p>
-
-              <p className="text-white/40 text-[11px] font-mono tracking-widest uppercase">
-                {stat.label}
-              </p>
+              <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${STAT_TONES[i]}`}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-2xl font-semibold text-white leading-tight">{stat.value}</p>
+                <p className="text-white/70 text-xs font-medium">{stat.label}</p>
+                <p className="text-white/30 text-[11px] truncate">{stat.sublabel}</p>
+              </div>
             </div>
-          ))}
+          );
+        })}
+      </div>
+
+      {/* main grid: site explorer + sidebar cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8">
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-white text-lg font-semibold">Monitored Sites</h2>
+            <span className="px-2 py-0.5 text-xs font-mono rounded-full bg-[#E8447A]/15 text-[#E8447A]">
+              {sitesWithStatus.length}
+            </span>
+          </div>
+
+          <SiteExplorer sites={sitesWithStatus} categories={CATEGORIES} now={now} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8">
-          <SiteExplorer
-            sites={sitesWithStatus}
-            categories={CATEGORIES}
-            now={now}
+        <aside className="space-y-6">
+          <ChannelStatusCard
+            telegramConnected={!!user.telegramChatId}
+            pushSubscribed={!!user.pushSubscription}
+            lastDigestSentAt={user.lastDigestSentAt}
           />
+          <ActivityFeed items={recentActivity} />
+        </aside>
+      </div>
 
-          <aside className="space-y-6">
-            <ChannelStatusCard
-              telegramConnected={!!user.telegramChatId}
-              pushSubscribed={!!user.pushSubscription}
-              lastDigestSentAt={user.lastDigestSentAt}
-            />
-
-            <ActivityFeed items={recentActivity} />
-          </aside>
+      {/* bottom banner */}
+      <div className="mt-10 relative overflow-hidden rounded-3xl border border-[#E8447A]/20 bg-gradient-to-br from-[#E8447A]/10 to-transparent p-6 flex items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-[#E8447A]/15 flex items-center justify-center shrink-0">
+            <Radar className="w-6 h-6 text-[#E8447A]" />
+          </div>
+          <div>
+            <p className="text-white font-semibold mb-0.5">We&apos;re always watching for you</p>
+            <p className="text-white/40 text-sm">
+              Raydar scans your selected sources regularly and notifies you the moment something changes.
+            </p>
+          </div>
+        </div>
+        <div className="hidden md:block">
+          <ScanningChart />
         </div>
       </div>
-    </main>
+    </>
   );
 }
