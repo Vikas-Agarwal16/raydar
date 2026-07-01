@@ -1,24 +1,49 @@
+import { ArrowRight } from "lucide-react";
+
 export default function FinalCTA() {
   return (
-    <section className="relative overflow-hidden border-b border-white/[0.08] px-6 py-28">
-      <div className="absolute inset-0 bg-[radial-gradient(#E8447A20_1px,transparent_1px)] [background-size:60px_60px] opacity-40" />
-      
-      <div className="mx-auto max-w-2xl text-center relative">
-        <h2 className="font-display text-5xl md:text-6xl tracking-tighter leading-none text-white">
-          Set it up once.<br />Never refresh again.
-        </h2>
-        <p className="mt-6 text-lg text-white/60">
-          Three questions, two minutes, and Raydar takes the watching off your plate for good.
-        </p>
+    <section className="border-b border-white/[0.08] px-6 py-24">
+      <div className="mx-auto max-w-6xl">
+        <div className="relative overflow-hidden rounded-3xl border border-[#E8447A]/25 bg-[#0B0C10]">
+          {/* Background art */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/cta-lighthouse.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          {/* Legibility gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0B0C10] via-[#0B0C10]/75 to-transparent" />
 
-        <a
-          href="/signup"
-          className="mt-10 inline-block rounded-full bg-[#E8447A] px-12 py-4 text-lg font-semibold text-white shadow-2xl shadow-[#E8447A]/50 hover:bg-white hover:text-black transition-all active:scale-95"
-        >
-          Start monitoring — free
-        </a>
+          <div className="relative max-w-xl px-8 py-16 sm:px-12 md:py-20 lg:px-16">
+            <h2 className="font-display text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
+              Ready when you are.
+              <br />
+              Stop checking. <span className="text-[#E8447A]">Start preparing.</span>
+            </h2>
 
-        <p className="mt-6 text-sm text-white/40">No credit card. No spam. Just what matters.</p>
+            <p className="mt-5 text-[15px] leading-relaxed text-white/60 sm:text-base">
+              Raydar quietly watches every important update so you never miss what matters.
+            </p>
+
+            <a
+              href="/signup"
+              className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#E8447A] px-8 py-3.5 text-base font-semibold text-white shadow-xl shadow-[#E8447A]/30 transition-all hover:bg-white hover:text-black active:scale-[0.985]"
+            >
+              Start Monitoring — Free
+              <ArrowRight size={18} strokeWidth={2.5} />
+            </a>
+
+            <p className="mt-5 flex flex-wrap items-center gap-x-2 text-sm text-white/45">
+              <span>No credit card</span>
+              <span className="text-[#E8447A]">•</span>
+              <span>No spam</span>
+              <span className="text-[#E8447A]">•</span>
+              <span>Free forever</span>
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );

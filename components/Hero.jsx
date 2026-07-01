@@ -12,26 +12,24 @@ const Icon = {
   Play: (p) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M6 4 19 12 6 20Z" /></svg>,
 };
 
+const SCAN_ROWS = [
+  { tag: "Exams", text: "JEE Main — admit card released", time: "2 min ago", severity: "critical", initial: "JM" },
+  { tag: "Internships", text: "Microsoft careers — new role: SDE Intern", time: "5 min ago", severity: "new", initial: "MS" },
+  { tag: "Hackathons", text: "Devfolio — registration opens in 3 days", time: "12 min ago", severity: "soon", initial: "DF" },
+  { tag: "Counselling", text: "JoSAA — round 2 seat allotment out", time: "18 min ago", severity: "critical", initial: "JS" },
+];
+
 export default function Hero() {
   const totalSites = SITES.length;
-  const namedSites = ["NTA", "JEE", "JoSAA", "Amazon"];
-  const remaining = totalSites - namedSites.length;
 
   return (
-    <section className="relative overflow-hidden border-b border-white/[0.08] px-6 py-24 md:py-32 bg-[#0B0C10] min-h-[90vh] flex items-center">
-      {/* Enhanced Radar Background */}
-      <div className="absolute inset-0 opacity-40 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#E8447A_0.6px,transparent_1px)] [background-size:50px_50px]" />
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] border border-[#E8447A]/10 rounded-full animate-[radar-ring_12s_linear_infinite]" />
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] border border-[#E8447A]/15 rounded-full animate-[radar-ring_12s_linear_infinite_2s]" />
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] h-[360px] border border-[#E8447A]/20 rounded-full animate-[radar-ring_12s_linear_infinite_4s]" />
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] animate-[sweep_4s_linear_infinite]">
-          <div className="absolute top-0 left-1/2 w-[3px] h-1/2 bg-gradient-to-b from-transparent via-[#E8447A] to-transparent shadow-[0_0_25px_#E8447A]" />
-        </div>
-        <div className="absolute left-[38%] top-[42%] w-2 h-2 bg-[#E8447A] rounded-full animate-[blip_2.5s_ease-in-out_infinite]" />
-        <div className="absolute left-[62%] top-[35%] w-2 h-2 bg-[#E8447A] rounded-full animate-[blip_3.2s_ease-in-out_infinite_0.8s]" />
-        <div className="absolute left-[45%] top-[65%] w-1.5 h-1.5 bg-[#22C55E] rounded-full animate-[blip_2.8s_ease-in-out_infinite_1.5s]" />
-        <div className="absolute left-[55%] top-[58%] w-2 h-2 bg-[#E8447A] rounded-full animate-[blip_4s_ease-in-out_infinite_2.2s]" />
+    <section className="relative overflow-hidden border-b border-white/[0.08] px-6 py-24 md:py-32 bg-[#06080A] min-h-[90vh] flex items-center">
+      {/* calm decorative bg — soft glow + dotted arc, no busy sweep/blips */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute right-[8%] top-[10%] w-[420px] h-[420px] rounded-full border border-dashed border-[#E8447A]/15" />
+        <div className="absolute right-[18%] top-[6%] w-2 h-2 rounded-full bg-[#E8447A]" />
+        <div className="absolute right-[2%] top-[34%] w-1.5 h-1.5 rounded-full bg-[#E8447A]/70" />
+        <div className="absolute right-[12%] top-[16%] w-[260px] h-[260px] rounded-full bg-[#E8447A]/10 blur-3xl" />
       </div>
 
       <div className="relative mx-auto grid max-w-6xl items-center gap-16 md:grid-cols-2 z-10">
@@ -77,7 +75,7 @@ export default function Hero() {
         </div>
 
         {/* Live Scans device mock */}
-        <div className="relative pb-8">
+        <div className="relative pb-12">
           <div className="relative flex overflow-hidden rounded-3xl border border-white/10 bg-[#10121F] shadow-2xl shadow-black/80">
             {/* Icon rail */}
             <div className="flex flex-col items-center gap-3 border-r border-white/[0.06] bg-black/20 px-4 py-6">
@@ -112,10 +110,9 @@ export default function Hero() {
               </div>
 
               <ul className="space-y-3">
-                <AlertRow tag="Exams" text="JEE Main — admit card released" time="2 min ago" severity="critical" />
-                <AlertRow tag="Internships" text="Amazon — new SDE Intern listing" time="5 min ago" severity="new" />
-                <AlertRow tag="Hackathons" text="Devfolio — registration opens in 3 days" time="12 min ago" severity="soon" />
-                <AlertRow tag="Counselling" text="JoSAA — round 2 seat allotment out" time="18 min ago" severity="critical" />
+                {SCAN_ROWS.map((row) => (
+                  <AlertRow key={row.text} {...row} />
+                ))}
               </ul>
 
               <a href="/signup" className="mt-5 flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors">
@@ -124,16 +121,23 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Glow platform */}
-          <div className="absolute -bottom-2 left-1/2 -z-10 h-10 w-[85%] -translate-x-1/2 rounded-full bg-[#E8447A]/30 blur-2xl" />
+          {/* tilted glow platform */}
+          <div className="absolute -bottom-4 left-1/2 -z-10 h-12 w-[88%] -translate-x-1/2 rounded-[50%] border border-[#E8447A]/40 shadow-[0_0_60px_15px_rgba(232,68,122,0.35)]" />
         </div>
       </div>
     </section>
   );
 }
 
-function AlertRow({ tag, text, time, severity }) {
-  const styles = {
+function AlertRow({ tag, text, time, severity, initial }) {
+  const badgeStyles = {
+    critical: "bg-[#E8447A]/15 text-[#F47BA0]",
+    new: "bg-blue-500/15 text-blue-300",
+    minor: "bg-blue-500/15 text-blue-300",
+    soon: "bg-amber-500/15 text-amber-300",
+  };
+
+  const avatarStyles = {
     critical: "bg-[#E8447A]/15 text-[#F47BA0]",
     new: "bg-blue-500/15 text-blue-300",
     minor: "bg-blue-500/15 text-blue-300",
@@ -141,14 +145,20 @@ function AlertRow({ tag, text, time, severity }) {
   };
 
   return (
-    <li className="flex items-start justify-between gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors">
-      <div>
-        <p className="text-white/90 text-[15px]">{text}</p>
+    <li className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors">
+      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[11px] font-bold ${avatarStyles[severity]}`}>
+        {initial}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-white/90 text-[15px] truncate">{text}</p>
+          <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-wider ${badgeStyles[severity]}`}>
+            {severity}
+          </span>
+        </div>
         <p className="text-xs text-white/40 mt-1">{tag} • {time}</p>
       </div>
-      <span className={`rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-wider ${styles[severity]}`}>
-        {severity}
-      </span>
     </li>
   );
 }
