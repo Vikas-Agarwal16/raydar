@@ -11,12 +11,6 @@ const SECTOR_META = {
   counselling: { icon: Landmark, desc: "Counselling schedules and deadlines across platforms." },
 };
 
-const TRUST = [
-  { icon: Globe, title: "20+ trusted sources", desc: "Carefully curated and monitored 24/7." },
-  { icon: ShieldCheck, title: "100% focused on opportunities", desc: "We monitor only what truly matters." },
-  { icon: Zap, title: "Real-time updates", desc: "Get notified the moment it goes live." },
-];
-
 const CHIP_LIMIT = 4;
 
 function initialsOf(name = "") {
@@ -35,11 +29,20 @@ const SECTORS = Object.entries(CATEGORIES).map(([key, cat]) => {
 
 export default function Sectors() {
   const [expanded, setExpanded] = useState({});
-
   const toggle = (key) => setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
 
+  const totalSites = SITES.length;
+
+  // Bug fix: was hardcoded "20+", now matches live SITES.length so it can never
+  // drift out of sync with the headline stat above it.
+  const TRUST = [
+    { icon: Globe, title: `${totalSites}+ trusted sources`, desc: "Carefully curated and monitored 24/7." },
+    { icon: ShieldCheck, title: "100% focused on opportunities", desc: "We monitor only what truly matters." },
+    { icon: Zap, title: "Real-time updates", desc: "Get notified the moment it goes live." },
+  ];
+
   return (
-    <section id="sectors" className="border-b border-white/[0.08] px-6 py-24 md:py-28">
+    <section id="sectors" className="border-b border-white/[0.08] px-6 py-24 md:py-28 bg-[#06080A]">
       <div className="mx-auto max-w-6xl">
         {/* Badge */}
         <div className="flex justify-center">
@@ -56,7 +59,7 @@ export default function Sectors() {
           More <span className="text-[#E8447A]">opportunities.</span>
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-center text-white/55">
-          Raydar monitors {SITES.length}+ trusted platforms across India so you never miss an important update.
+          Raydar monitors {totalSites}+ trusted platforms across India so you never miss an important update.
         </p>
 
         {/* Cards */}
@@ -84,7 +87,10 @@ export default function Sectors() {
                     <span
                       key={site.slug}
                       title={site.name}
-                      className={`flex items-center rounded-full border-2 border-[#0B0C10] bg-white/10 text-[10px] font-semibold text-white/80 ${
+                      // Bug fix: border was #0B0C10 (auth-card bg) but this section
+                      // sits on homepage bg #06080A — mismatched border color broke
+                      // the overlap-separator illusion. Now matches actual section bg.
+                      className={`flex items-center rounded-full border-2 border-[#06080A] bg-white/10 text-[10px] font-semibold text-white/80 ${
                         isExpanded ? "px-3 py-1.5 w-fit" : "h-8 w-8 justify-center -ml-2 first:ml-0"
                       }`}
                     >
